@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Heathrow Departures – Local</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --gap: 12px;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            margin: 16px;
+            color: #111;
+        }
+
+        h2 {
+            margin: 0 0 6px 0;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 8px 0 12px;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            max-width: 100%;
+        }
+
+        button {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #f7f7f7;
+        }
+
+        .toggleOn {
+            border-color: #0a5;
+            box-shadow: 0 0 0 2px rgba(0, 170, 85, .12);
+        }
+
+        .pill {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            font-size: 13px;
+            background: #fafafa;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.25fr 1fr;
+            gap: var(--gap);
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #fff;
+        }
+
+        .card h3 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+        }
+
+        .card .sub {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .scroll {
+            max-height: 280px;
+            overflow: auto;
+            border-top: 1px solid #eee;
+            padding-top: 8px;
+        }
+
+        .line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 6px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 13px;
+        }
+
+        .line:last-child {
+            border-bottom: none;
+        }
+
+        .k {
+            color: #333;
+        }
+
+        .v {
+            font-weight: 800;
+        }
+
+        /* Desktop flight row layout */
+        .flightLine {
+            display: grid;
+            grid-template-columns: 120px 70px 70px 44px 1.2fr 1fr 120px;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 13px;
+            align-items: center;
+        }
+
+        .flightLine:last-child {
+            border-bottom: none;
+        }
+
+        /* Mobile flight row layout: stacked */
+        @media (max-width: 600px) {
+            body {
+                margin: 12px;
+            }
+
+            .flightLine {
+                display: block;
+                padding: 10px 0;
+            }
+
+            .flightLine>div {
+                margin: 6px 0;
+            }
+
+            .flightLine .row1 {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+
+            .flightLine .row2 {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                align-items: center;
+                color: #333;
+            }
+
+            .flightLine .row3 {
+                color: #666;
+            }
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .tag.long {
+            border-color: rgba(10, 170, 85, .35);
+            background: rgba(10, 170, 85, .08);
+        }
+
+        .tag.short {
+            border-color: rgba(0, 102, 204, .28);
+            background: rgba(0, 102, 204, .06);
+        }
+
+        .timePill {
+            font-weight: 800;
+            border-radius: 8px;
+            padding: 3px 8px;
+            display: inline-block;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .timeBook {
+            color: #6a00ff;
+            background: #f1eaff;
+        }
+
+        .timeDep {
+            color: #0a5;
+            background: #e9fff3;
+        }
+
+        .timeArr {
+            color: #06c;
+            background: #eaf2ff;
+        }
+
+        /* Table wrapper for responsiveness */
+        .tableWrap {
+            margin-top: 14px;
+            overflow-x: auto;
+            border: 1px solid #eee;
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 980px;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            padding: 10px 8px;
+            vertical-align: top;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+
+        tr:hover {
+            background: #fafafa;
+        }
+
+        .error {
+            color: #b00;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Heathrow Departures</h2>
+    <div class="muted">
+        Load <b>departures.json</b>. “Booking” is a <b>window</b>:
+        (airport-arrival target − 1 hour travel) → up to (airport-arrival target).
+        Long-haul arrival target = dep − 3h, short-haul = dep − 2h.
+    </div>
+
+    <div class="controls">
+        <input id="fileInput" type="file" accept="application/json" />
+        <button id="loadBtn">Load departures.json</button>
+
+        <button id="toggleBtn" title="Toggle between all flights and long-haul only">
+            View: All flights
+        </button>
+
+        <span class="pill" id="loadedInfo">Not loaded</span>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>Flights booking at these times</h3>
+            <div class="sub">Hour buckets. Count includes any flight whose booking window overlaps the hour.</div>
+            <div class="scroll" id="bookingBuckets"></div>
+        </div>
+
+        <div class="card">
+            <h3 id="thisHourTitle">This hour slot</h3>
+            <div class="sub">Flights booking in this hour (chronological by airport-arrival target).</div>
+            <div class="scroll" id="thisHourFlights"></div>
+        </div>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        // ---------- state ----------
+        let allRows = [];
+        let longHaulOnly = false;
+        const LONG_HAUL_MINUTES = 240;
+
+        // 🔧 TEST MODE (optional)
+        const TEST_TIME = null; // e.g. "05:00" or null
+
+        // ---------- time helpers ----------
+        const formatTime = (date) =>
+            date ? date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
+
+        const startOfHour = (date) => {
+            const d = new Date(date);
+            d.setMinutes(0, 0, 0);
+            return d;
+        };
+
+        const endOfHour = (date) => {
+            const d = startOfHour(date);
+            d.setHours(d.getHours() + 1);
+            return d;
+        };
+
+        const hourLabel = (start) => `${formatTime(start)}–${formatTime(endOfHour(start))}`;
+
+        const overlaps = (aStart, aEnd, bStart, bEnd) =>
+            aStart && aEnd && bStart && bEnd && aStart < bEnd && aEnd > bStart;
+
+        const safe = (v) => (v == null ? "" : String(v));
+
+        // Use dataset date + (real or TEST) time so "this hour slot" works even if flights are tomorrow
+        function getNowForDataset(rows) {
+            const realNow = new Date();
+            const base = rows?.find(r => r.depDate)?.depDate || realNow;
+            const now = new Date(base);
+
+            if (TEST_TIME) {
+                const [h, m] = TEST_TIME.split(":").map(Number);
+                now.setHours(h, m, 0, 0);
+            } else {
+                now.setHours(realNow.getHours(), realNow.getMinutes(), 0, 0);
+            }
+            return now;
+        }
+
+        // ---------- transform ----------
+        function transform(flights) {
+            return flights
+                .map(item => item?.flightService)
+                .filter(Boolean)
+                .filter(fs => fs.arrivalOrDeparture === "D")
+                .map(fs => {
+                    const movement = fs.aircraftMovement;
+                    const origin = movement?.route?.portsOfCall?.find(p => p.portOfCallType === "ORIGIN");
+                    const destination = movement?.route?.portsOfCall?.find(p => p.portOfCallType === "DESTINATION");
+
+                    const scheduledIso = origin?.operatingTimes?.scheduled?.local ?? null;
+                    const depDate = scheduledIso ? new Date(scheduledIso) : null;
+
+                    const durationMin = movement?.scheduledFlightDurationMinutes ?? 0;
+                    const isLongHaul = durationMin >= LONG_HAUL_MINUTES;
+
+                    const arriveAirportDate = depDate
+                        ? new Date(depDate.getTime() - (isLongHaul ? 3 : 2) * 60 * 60 * 1000)
+                        : null;
+
+                    const bookingWindowStart = arriveAirportDate
+                        ? new Date(arriveAirportDate.getTime() - 1 * 60 * 60 * 1000)
+                        : null;
+
+                    const bookingWindowEnd = arriveAirportDate
+                        ? new Date(arriveAirportDate.getTime())
+                        : null;
+
+                    const status =
+                        movement?.aircraftMovementStatus?.find(s => s.name === "OriginStatus")?.message ??
+                        movement?.aircraftMovementStatus?.[0]?.message ??
+                        "";
+
+                    return {
+                        flight: fs.iataFlightIdentifier ?? (fs.flightNumber ?? ""),
+                        airline: fs.airlineParty?.name ?? "",
+                        aircraftType: fs.aircraftTransport?.description ?? "",
+                        destinationAirport: destination?.airportFacility?.name ?? "",
+                        destinationCity: destination?.airportFacility?.airportCityLocation?.name ?? "",
+                        terminal: origin?.airportFacility?.terminalFacility?.code ?? "",
+                        durationMin,
+                        isLongHaul,
+                        status,
+                        depIso: scheduledIso,
+                        depDate,
+                        arriveAirportDate,
+                        bookingWindowStart,
+                        bookingWindowEnd,
+                        scheduledDepartureTime: formatTime(depDate),
+                        recommendedAirportArrivalTime: formatTime(arriveAirportDate),
+                        bookingWindowLabel: (bookingWindowStart && bookingWindowEnd)
+                            ? `${formatTime(bookingWindowStart)}–${formatTime(bookingWindowEnd)}`
+                            : ""
+                    };
+                });
+        }
+
+        // ---------- filtering ----------
+        function getVisibleRows() {
+            if (!longHaulOnly) return allRows;
+            return allRows.filter(r => r.isLongHaul);
+        }
+
+        // ---------- booking hour buckets ----------
+        function computeBookingHourCounts(rows) {
+            const starts = rows.map(r => r.bookingWindowStart?.getTime()).filter(Boolean);
+            const ends = rows.map(r => r.bookingWindowEnd?.getTime()).filter(Boolean);
+            if (!starts.length || !ends.length) return [];
+
+            const minStart = startOfHour(new Date(Math.min(...starts)));
+            const maxEndHour = startOfHour(new Date(Math.max(...ends)));
+
+            const buckets = [];
+            for (let t = new Date(minStart); t <= maxEndHour; t.setHours(t.getHours() + 1)) {
+                const bStart = new Date(t);
+                const bEnd = endOfHour(bStart);
+                const label = hourLabel(bStart);
+
+                const count = rows.reduce((acc, r) => {
+                    return acc + (overlaps(r.bookingWindowStart, r.bookingWindowEnd, bStart, bEnd) ? 1 : 0);
+                }, 0);
+
+                buckets.push({ label, start: bStart, end: bEnd, count });
+            }
+            return buckets;
+        }
+
+        function renderBookingBuckets(rows) {
+            const buckets = computeBookingHourCounts(rows);
+            const el = document.getElementById("bookingBuckets");
+
+            if (!buckets.length) {
+                el.innerHTML = `<div class="muted">No booking windows found.</div>`;
+                return;
+            }
+
+            el.innerHTML = buckets.map(b => `
+      <div class="line">
+        <div class="k">${b.label}</div>
+        <div class="v">${b.count}</div>
+      </div>
+    `).join("");
+        }
+
+        // ---------- this hour slot ----------
+        function renderThisHour(rows) {
+            const now = getNowForDataset(rows);
+            const bStart = startOfHour(now);
+            const bEnd = endOfHour(bStart);
+            const label = hourLabel(bStart);
+
+            document.getElementById("thisHourTitle").textContent = `This hour slot (${label})`;
+
+            const inThisHour = rows
+                .filter(r => overlaps(r.bookingWindowStart, r.bookingWindowEnd, bStart, bEnd))
+                .sort((a, b) =>
+                    (a.arriveAirportDate?.getTime?.() ?? 0) - (b.arriveAirportDate?.getTime?.() ?? 0) ||
+                    (a.depDate?.getTime?.() ?? 0) - (b.depDate?.getTime?.() ?? 0)
+                );
+
+            const el = document.getElementById("thisHourFlights");
+            if (!inThisHour.length) {
+                el.innerHTML = `<div class="muted">No flights booking in this hour.</div>`;
+                return;
+            }
+
+            // Desktop grid (already responsive); mobile uses stacked rows via CSS
+            el.innerHTML = inThisHour.map(r => `
+      <div class="flightLine">
+        <div class="row1">
+          <span class="timePill timeBook">${safe(r.bookingWindowLabel)}</span>
+          <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
+        </div>
+        <div class="row2">
+          <span class="timePill timeArr">${safe(r.recommendedAirportArrivalTime)}</span>
+        </div>
+        <div class="row2">
+          <span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span>
+        </div>
+        <div class="row3">${safe(r.destinationCity)} (${safe(r.destinationAirport)})</div>
+        <div class="row3">${safe(r.airline)}</div>
+        <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
+      </div>
+    `).join("");
+        }
+
+        // ---------- main table ----------
+        function renderTable(rows) {
+            const sorted = [...rows].sort((a, b) => (a.depIso || "").localeCompare(b.depIso || ""));
+
+            document.getElementById("output").innerHTML = `
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Booking window</th>
+              <th>Arrive airport</th>
+              <th>Dep</th>
+              <th>Terminal</th>
+              <th>Destination</th>
+              <th>Airline</th>
+              <th>Aircraft</th>
+              <th>Flight</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map(r => `
+              <tr>
+                <td><span class="timePill timeBook">${safe(r.bookingWindowLabel)}</span></td>
+                <td><span class="timePill timeArr">${safe(r.recommendedAirportArrivalTime)}</span></td>
+                <td><span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span></td>
+                <td>${safe(r.terminal)}</td>
+                <td>${safe(r.destinationCity)} (${safe(r.destinationAirport)})</td>
+                <td>${safe(r.airline)}</td>
+                <td>${safe(r.aircraftType)}</td>
+                <td>${safe(r.flight)} ${r.isLongHaul ? '<span class="tag long">Long-haul</span>' : '<span class="tag short">Short-haul</span>'}</td>
+                <td>${safe(r.status)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+        }
+
+        function renderAll() {
+            const rows = getVisibleRows();
+            renderBookingBuckets(rows);
+            renderThisHour(rows);
+            renderTable(rows);
+
+            const btn = document.getElementById("toggleBtn");
+            btn.textContent = longHaulOnly ? `View: Long-haul (≥${LONG_HAUL_MINUTES}m)` : "View: All flights";
+            btn.classList.toggle("toggleOn", longHaulOnly);
+        }
+
+        // ---------- load JSON from file ----------
+        async function loadFromFile(file) {
+            const text = await file.text();
+            const flights = JSON.parse(text);
+            allRows = transform(flights);
+
+            const stamp = new Date().toLocaleString("en-GB", { hour12: false });
+            document.getElementById("loadedInfo").textContent = `Loaded: ${allRows.length} flights @ ${stamp}`;
+            renderAll();
+        }
+
+        document.getElementById("loadBtn").addEventListener("click", async () => {
+            const input = document.getElementById("fileInput");
+            if (!input.files?.length) {
+                alert("Choose departures.json first.");
+                return;
+            }
+            try {
+                await loadFromFile(input.files[0]);
+            } catch (e) {
+                document.getElementById("output").innerHTML = `<p class="error">JSON load error: ${e.message}</p>`;
+            }
+        });
+
+        document.getElementById("toggleBtn").addEventListener("click", () => {
+            if (!allRows.length) return;
+            longHaulOnly = !longHaulOnly;
+            renderAll();
+        });
+
+        // Keep "this hour slot" updated as time passes (no need to reload JSON)
+        setInterval(() => {
+            if (!allRows.length) return;
+            renderThisHour(getVisibleRows());
+        }, 60 * 1000);
+    </script>
+
+</body>
+
+</html>
