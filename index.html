@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Heathrow Departures – Local</title>
+    <title>Heathrow Departures</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
         :root {
@@ -32,13 +32,6 @@
             flex-wrap: wrap;
             align-items: center;
             margin: 8px 0 12px;
-        }
-
-        input[type="file"] {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            max-width: 100%;
         }
 
         button {
@@ -264,20 +257,19 @@
 
     <h2>Heathrow Departures</h2>
     <div class="muted">
-        Load <b>departures.json</b>. “Booking” is a <b>window</b>:
+        Auto-loads <b>departures.json</b> from this site. “Booking” is a <b>window</b>:
         (airport-arrival target − 1 hour travel) → up to (airport-arrival target).
         Long-haul arrival target = dep − 3h, short-haul = dep − 2h.
     </div>
 
     <div class="controls">
-        <input id="fileInput" type="file" accept="application/json" />
-        <button id="loadBtn">Load departures.json</button>
+        <button id="reloadBtn" title="Re-fetch departures.json">Reload JSON</button>
 
         <button id="toggleBtn" title="Toggle between all flights and long-haul only">
             View: All flights
         </button>
 
-        <span class="pill" id="loadedInfo">Not loaded</span>
+        <span class="pill" id="loadedInfo">Loading…</span>
     </div>
 
     <div class="grid">
@@ -302,8 +294,12 @@
         let longHaulOnly = false;
         const LONG_HAUL_MINUTES = 240;
 
-        // 🔧 TEST MODE (optional)
-        const TEST_TIME = null; // e.g. "05:00" or null
+        // 🔧 TEST MODE (optional): set e.g. "05:00" or leave as null for real time
+        const TEST_TIME = null;
+
+        // If you use a subpath repo on GitHub Pages (username.github.io/repo),
+        // keeping this relative path is correct as long as departures.json is in the same folder as this HTML.
+        const JSON_URL = "./departures.json";
 
         // ---------- time helpers ----------
         const formatTime = (date) =>
@@ -452,13 +448,12 @@
         function renderThisHour(rows) {
             const now = getNowForDataset(rows);
             const bStart = startOfHour(now);
-            const bEnd = endOfHour(bStart);
             const label = hourLabel(bStart);
 
             document.getElementById("thisHourTitle").textContent = `This hour slot (${label})`;
 
             const inThisHour = rows
-                .filter(r => overlaps(r.bookingWindowStart, r.bookingWindowEnd, bStart, bEnd))
+                .filter(r => overlaps(r.bookingWindowStart, r.bookingWindowEnd, bStart, endOfHour(bStart)))
                 .sort((a, b) =>
                     (a.arriveAirportDate?.getTime?.() ?? 0) - (b.arriveAirportDate?.getTime?.() ?? 0) ||
                     (a.depDate?.getTime?.() ?? 0) - (b.depDate?.getTime?.() ?? 0)
@@ -470,19 +465,14 @@
                 return;
             }
 
-            // Desktop grid (already responsive); mobile uses stacked rows via CSS
             el.innerHTML = inThisHour.map(r => `
       <div class="flightLine">
         <div class="row1">
           <span class="timePill timeBook">${safe(r.bookingWindowLabel)}</span>
           <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
         </div>
-        <div class="row2">
-          <span class="timePill timeArr">${safe(r.recommendedAirportArrivalTime)}</span>
-        </div>
-        <div class="row2">
-          <span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span>
-        </div>
+        <div class="row2"><span class="timePill timeArr">${safe(r.recommendedAirportArrivalTime)}</span></div>
+        <div class="row2"><span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span></div>
         <div class="row3">${safe(r.destinationCity)} (${safe(r.destinationAirport)})</div>
         <div class="row3">${safe(r.airline)}</div>
         <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
@@ -541,29 +531,30 @@
             btn.classList.toggle("toggleOn", longHaulOnly);
         }
 
-        // ---------- load JSON from file ----------
-        async function loadFromFile(file) {
-            const text = await file.text();
-            const flights = JSON.parse(text);
-            allRows = transform(flights);
+        // ---------- auto-load JSON ----------
+        async function loadFromUrl() {
+            const info = document.getElementById("loadedInfo");
+            info.textContent = "Loading…";
 
-            const stamp = new Date().toLocaleString("en-GB", { hour12: false });
-            document.getElementById("loadedInfo").textContent = `Loaded: ${allRows.length} flights @ ${stamp}`;
-            renderAll();
+            try {
+                // Cache-bust so updates show immediately after you commit new JSON
+                const res = await fetch(`${JSON_URL}?v=${Date.now()}`, { cache: "no-store" });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const flights = await res.json();
+
+                allRows = transform(flights);
+
+                const stamp = new Date().toLocaleString("en-GB", { hour12: false });
+                info.textContent = `Loaded: ${allRows.length} flights @ ${stamp}`;
+                renderAll();
+            } catch (e) {
+                info.textContent = "Load failed";
+                document.getElementById("output").innerHTML =
+                    `<p class="error">Error loading ${JSON_URL}: ${e.message}</p>`;
+            }
         }
 
-        document.getElementById("loadBtn").addEventListener("click", async () => {
-            const input = document.getElementById("fileInput");
-            if (!input.files?.length) {
-                alert("Choose departures.json first.");
-                return;
-            }
-            try {
-                await loadFromFile(input.files[0]);
-            } catch (e) {
-                document.getElementById("output").innerHTML = `<p class="error">JSON load error: ${e.message}</p>`;
-            }
-        });
+        document.getElementById("reloadBtn").addEventListener("click", loadFromUrl);
 
         document.getElementById("toggleBtn").addEventListener("click", () => {
             if (!allRows.length) return;
@@ -576,6 +567,9 @@
             if (!allRows.length) return;
             renderThisHour(getVisibleRows());
         }, 60 * 1000);
+
+        // Auto-load on page open
+        loadFromUrl();
     </script>
 
 </body>
