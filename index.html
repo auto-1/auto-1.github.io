@@ -274,14 +274,14 @@
 
     <div class="grid">
         <div class="card">
-            <h3>Flights booking at these times</h3>
-            <div class="sub">Hour buckets. Count includes any flight whose booking window overlaps the hour.</div>
+            <h3>Flights driving airport trip demand (hourly)</h3>
+            <div class="sub">Each count represents the number of departing flights whose passengers are likely to book a ride during that hour.</div>
             <div class="scroll" id="bookingBuckets"></div>
         </div>
 
         <div class="card">
-            <h3 id="thisHourTitle">This hour slot</h3>
-            <div class="sub">Flights booking in this hour (chronological by airport-arrival target).</div>
+            <h3 id="thisHourTitle">Flights generating demand this hour</h3>
+            <div class="sub">Flights expected to generate ride bookings this hour, in time order.</div>
             <div class="scroll" id="thisHourFlights"></div>
         </div>
     </div>
@@ -489,12 +489,12 @@
         <table>
           <thead>
             <tr>
-              <th>Booking window</th>
-              <th>Arrive airport</th>
+              <th>Estimated booking window</th>
+              <th>Recommended airport arrival</th>
               <th>Dep</th>
-              <th>Terminal</th>
               <th>Destination</th>
               <th>Airline</th>
+              <th>Terminal</th>
               <th>Aircraft</th>
               <th>Flight</th>
               <th>Status</th>
@@ -506,9 +506,9 @@
                 <td><span class="timePill timeBook">${safe(r.bookingWindowLabel)}</span></td>
                 <td><span class="timePill timeArr">${safe(r.recommendedAirportArrivalTime)}</span></td>
                 <td><span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span></td>
-                <td>${safe(r.terminal)}</td>
                 <td>${safe(r.destinationCity)} (${safe(r.destinationAirport)})</td>
                 <td>${safe(r.airline)}</td>
+                <td>${safe(r.terminal)}</td>
                 <td>${safe(r.aircraftType)}</td>
                 <td>${safe(r.flight)} ${r.isLongHaul ? '<span class="tag long">Long-haul</span>' : '<span class="tag short">Short-haul</span>'}</td>
                 <td>${safe(r.status)}</td>
