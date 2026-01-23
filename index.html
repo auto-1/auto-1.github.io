@@ -313,7 +313,7 @@
     </div>
 
     <div class="controls">
-        <button id="reloadBtn" title="Re-fetch departures.json">Reload JSON</button>
+        <!-- <button id="reloadBtn" title="Re-fetch departures.json">Reload JSON</button> -->
 
         <button id="toggleBtn" title="Toggle between all flights and long-haul only">
             View: All flights
@@ -522,7 +522,7 @@
         </div>
         <div class="row2">
             <span class="timePill timeArr ${getArrivalClass(r.arriveAirportDate, rows)}">
-                <span class="timeLabel">Arrival</span>${safe(r.recommendedAirportArrivalTime)}
+                <span class="timeLabel">Airport arrival</span>${safe(r.recommendedAirportArrivalTime)}
             </span>
         </div>
         <span class="timePill timeDep">
@@ -584,15 +584,19 @@
             el.innerHTML = inThisHour.map(r => `
     <div class="flightLine ${isFaded(r.arriveAirportDate, rows) ? "faded" : ""}">
         <div class="row1">
-          <span class="timePill timeBook">${safe(r.bookingWindowLabel)}</span>
+        <span class="timePill timeBook">
+         <span class="timeLabel">Booking window</span>${safe(r.bookingWindowLabel)}
+        </span>
           <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
         </div>
         <div class="row2">
             <span class="timePill timeArr ${getArrivalClass(r.arriveAirportDate, rows)}">
-                ${safe(r.recommendedAirportArrivalTime)}
+                <span class="timeLabel">Airport arrival</span>${safe(r.recommendedAirportArrivalTime)}
             </span>
         </div>
-        <div class="row2"><span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span></div>
+        <span class="timePill timeDep">
+            <span class="timeLabel">Departure</span>${safe(r.scheduledDepartureTime)}
+        </span>
         <div class="row3">${safe(r.destinationCity)} (${safe(r.destinationAirport)})</div>
         <div class="row3">${safe(r.airline)}</div>
         <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
