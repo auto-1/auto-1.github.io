@@ -188,6 +188,13 @@
             background: rgba(0, 102, 204, .06);
         }
 
+        .timeLabel {
+            font-size: 11px;
+            font-weight: 700;
+            opacity: 0.7;
+            margin-right: 4px;
+        }
+
         .timePill {
             font-weight: 800;
             border-radius: 8px;
@@ -508,15 +515,19 @@
                 const flightsHtml = flightsInBucket.map(r => `
       <div class="flightLine ${isFaded(r.arriveAirportDate, rows) ? "faded" : ""}">
         <div class="row1">
-          <span class="timePill timeBook">Booking window: ${safe(r.bookingWindowLabel)}</span>
-          <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
+            <span class="timePill timeBook">
+            <span class="timeLabel">Booking window</span>${safe(r.bookingWindowLabel)}
+            </span>
+            <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
         </div>
         <div class="row2">
-          <span class="timePill timeArr ${getArrivalClass(r.arriveAirportDate, rows)}">
-            Recommended airport arrival:${safe(r.recommendedAirportArrivalTime)}
-          </span>
+            <span class="timePill timeArr ${getArrivalClass(r.arriveAirportDate, rows)}">
+                <span class="timeLabel">Arrival</span>${safe(r.recommendedAirportArrivalTime)}
+            </span>
         </div>
-        <div class="row2"><span class="timePill timeDep">Departure: ${safe(r.scheduledDepartureTime)}</span></div>
+        <span class="timePill timeDep">
+            <span class="timeLabel">Departure</span>${safe(r.scheduledDepartureTime)}
+        </span>
         <div class="row3">${safe(r.destinationCity)} (${safe(r.destinationAirport)})</div>
         <div class="row3">${safe(r.airline)}</div>
         <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
