@@ -212,6 +212,17 @@
             background: #eaf2ff;
         }
 
+        .timeArr.passed {
+            background: #ffe9e9;
+            color: #b00020;
+        }
+
+        .timeArr.soon {
+            background: #fff2cc;
+            color: #8a5a00;
+        }
+
+
         /* Table wrapper for responsiveness */
         .tableWrap {
             margin-top: 14px;
@@ -275,7 +286,8 @@
     <div class="grid">
         <div class="card">
             <h3>Flights driving airport trip demand (hourly)</h3>
-            <div class="sub">Each count represents the number of departing flights whose passengers are likely to book a ride during that hour.</div>
+            <div class="sub">Each count represents the number of departing flights whose passengers are likely to book a
+                ride during that hour.</div>
             <div class="scroll" id="bookingBuckets"></div>
         </div>
 
@@ -338,6 +350,18 @@
             }
             return now;
         }
+
+        function getArrivalClass(arriveAirportDate, rows) {
+            if (!arriveAirportDate) return "";
+
+            const now = getNowForDataset(rows);
+            const diffMs = arriveAirportDate - now;
+
+            if (diffMs < 0) return "passed";                 // already passed
+            if (diffMs <= 60 * 60 * 1000) return "soon";     // within 1 hour
+            return "";                                       // normal (blue)
+        }
+
 
         // ---------- transform ----------
         function transform(flights) {
@@ -471,7 +495,11 @@
           <span class="timePill timeBook">${safe(r.bookingWindowLabel)}</span>
           <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
         </div>
-        <div class="row2"><span class="timePill timeArr">${safe(r.recommendedAirportArrivalTime)}</span></div>
+        <div class="row2">
+            <span class="timePill timeArr ${getArrivalClass(r.arriveAirportDate, rows)}">
+                ${safe(r.recommendedAirportArrivalTime)}
+            </span>
+        </div>
         <div class="row2"><span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span></div>
         <div class="row3">${safe(r.destinationCity)} (${safe(r.destinationAirport)})</div>
         <div class="row3">${safe(r.airline)}</div>
