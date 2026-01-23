@@ -267,6 +267,10 @@
             background: #fafafa;
         }
 
+        tr.faded {
+            opacity: 0.35;
+        }
+
         .error {
             color: #b00;
             font-weight: 600;
@@ -626,7 +630,7 @@
           </thead>
           <tbody>
             ${sorted.map(r => `
-              <tr>
+            <tr class="${isFaded(r.arriveAirportDate, rows) ? "faded" : ""}">
                 <td><span class="timePill timeBook">${safe(r.bookingWindowLabel)}</span></td>
                 <td><span class="timePill timeArr">${safe(r.recommendedAirportArrivalTime)}</span></td>
                 <td><span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span></td>
