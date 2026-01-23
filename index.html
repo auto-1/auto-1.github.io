@@ -508,15 +508,15 @@
                 const flightsHtml = flightsInBucket.map(r => `
       <div class="flightLine ${isFaded(r.arriveAirportDate, rows) ? "faded" : ""}">
         <div class="row1">
-          <span class="timePill timeBook">${safe(r.bookingWindowLabel)}</span>
+          <span class="timePill timeBook">Booking window: ${safe(r.bookingWindowLabel)}</span>
           <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
         </div>
         <div class="row2">
           <span class="timePill timeArr ${getArrivalClass(r.arriveAirportDate, rows)}">
-            ${safe(r.recommendedAirportArrivalTime)}
+            Recommended airport arrival:${safe(r.recommendedAirportArrivalTime)}
           </span>
         </div>
-        <div class="row2"><span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span></div>
+        <div class="row2"><span class="timePill timeDep">Departure: ${safe(r.scheduledDepartureTime)}</span></div>
         <div class="row3">${safe(r.destinationCity)} (${safe(r.destinationAirport)})</div>
         <div class="row3">${safe(r.airline)}</div>
         <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
