@@ -404,7 +404,7 @@
         function isFaded(arriveAirportDate, rows) {
             if (!arriveAirportDate) return false;
             const now = getNowForDataset(rows);
-            return now.getTime() > (arriveAirportDate.getTime() + 30 * 60 * 1000);
+            return now.getTime() > (arriveAirportDate.getTime() + 15 * 60 * 1000);
         }
 
         // ---------- transform ----------
