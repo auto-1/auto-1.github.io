@@ -530,6 +530,13 @@
                 return;
             }
 
+            // 🔥 Top ~35% busiest hours (set to 0.60 for top 40%, 0.70 for top 30%)
+            const HOT_PERCENTILE = 0.65; // 65th percentile => top ~35%
+            const sortedCounts = buckets.map(b => b.count).sort((a, b) => a - b);
+
+            const idx = Math.floor((sortedCounts.length - 1) * HOT_PERCENTILE);
+            const hotThreshold = sortedCounts[idx] ?? 0;
+
             el.innerHTML = buckets.map(b => {
                 const flightsInBucket = rows
                     .filter(r => overlaps(r.pickupWindowStart, r.pickupWindowEnd, b.start, b.end))
@@ -539,40 +546,42 @@
                     );
 
                 const flightsHtml = flightsInBucket.map(r => `
-        <div class="flightLine ${isFaded(r.pickupWindowEnd, rows) ? "faded" : ""}">
-          <div class="row1">
-            <span class="timePill timeBook">
-              <span class="timeLabel">Pickup window</span>${safe(r.pickupWindowLabel)}
-            </span>
-            <span class="tag ${r.isDomestic ? "short" : (r.isLongHaul ? "long" : "short")}">
-              ${r.isDomestic ? "DOM" : (r.isLongHaul ? "LH" : "SH")}
-            </span>
-          </div>
-          <div class="row2">
-            <span class="timePill timeArr ${getPickupClass(r.pickupWindowEnd, rows)}">
-              <span class="timeLabel">Latest pickup</span>${safe(r.pickupEndTime)}
-            </span>
-          </div>
-          <span class="timePill timeDep">
-            <span class="timeLabel">Landing</span>${safe(r.landingTime)}
+      <div class="flightLine ${isFaded(r.pickupWindowEnd, rows) ? "faded" : ""}">
+        <div class="row1">
+          <span class="timePill timeBook">
+            <span class="timeLabel">Pickup window</span>${safe(r.pickupWindowLabel)}
           </span>
-          <div class="row3">${safe(r.originCity)} (${safe(r.originAirport)})</div>
-          <div class="row3">${safe(r.airline)}</div>
-          <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
+          <span class="tag ${r.isDomestic ? "short" : (r.isLongHaul ? "long" : "short")}">
+            ${r.isDomestic ? "DOM" : (r.isLongHaul ? "LH" : "SH")}
+          </span>
         </div>
-      `).join("");
+        <div class="row2">
+          <span class="timePill timeArr ${getPickupClass(r.pickupWindowEnd, rows)}">
+            <span class="timeLabel">Latest pickup</span>${safe(r.pickupEndTime)}
+          </span>
+        </div>
+        <span class="timePill timeDep">
+          <span class="timeLabel">Landing</span>${safe(r.landingTime)}
+        </span>
+        <div class="row3">${safe(r.originCity)} (${safe(r.originAirport)})</div>
+        <div class="row3">${safe(r.airline)}</div>
+        <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
+      </div>
+    `).join("");
+
+                const isHot = b.count >= hotThreshold && b.count > 0;
 
                 return `
-        <details class="bucket">
-          <summary>
-            <span class="k">${b.label}</span>
-            <span class="bucketCount">${b.count}</span>
-          </summary>
-          <div class="bucketFlights">
-            ${flightsInBucket.length ? flightsHtml : `<div class="muted">No flights in this hour.</div>`}
-          </div>
-        </details>
-      `;
+      <details class="bucket">
+        <summary>
+          <span class="k">${b.label} ${isHot ? "🔥" : ""}</span>
+          <span class="bucketCount">${b.count}</span>
+        </summary>
+        <div class="bucketFlights">
+          ${flightsInBucket.length ? flightsHtml : `<div class="muted">No flights in this hour.</div>`}
+        </div>
+      </details>
+    `;
             }).join("");
 
             // Accordion behaviour (only one open)
@@ -585,6 +594,7 @@
                 });
             });
         }
+
 
         // ---------- this hour ----------
         function renderThisHour(rows) {

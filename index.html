@@ -319,7 +319,7 @@
     <div class="controls">
         <button id="departuresBtn">Departures</button>
         <button id="arrivalsBtn">Arrivals</button>
-        
+
         <button id="reloadBtn" title="Re-fetch departures.json">Reload JSON</button>
 
         <button id="toggleBtn" title="Toggle between all flights and long-haul only">
@@ -511,6 +511,13 @@
                 return;
             }
 
+            // 🔥 Top ~35% busiest hours (set to 0.60 for top 40%, 0.70 for top 30%)
+            const HOT_PERCENTILE = 0.65; // 65th percentile => top ~35%
+            const sortedCounts = buckets.map(b => b.count).sort((a, b) => a - b);
+
+            const idx = Math.floor((sortedCounts.length - 1) * HOT_PERCENTILE);
+            const hotThreshold = sortedCounts[idx] ?? 0;
+
             el.innerHTML = buckets.map(b => {
                 const flightsInBucket = rows
                     .filter(r => overlaps(r.bookingWindowStart, r.bookingWindowEnd, b.start, b.end))
@@ -522,18 +529,18 @@
                 const flightsHtml = flightsInBucket.map(r => `
       <div class="flightLine ${isFaded(r.arriveAirportDate, rows) ? "faded" : ""}">
         <div class="row1">
-            <span class="timePill timeBook">
+          <span class="timePill timeBook">
             <span class="timeLabel">Booking window</span>${safe(r.bookingWindowLabel)}
-            </span>
-            <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
+          </span>
+          <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
         </div>
         <div class="row2">
-            <span class="timePill timeArr ${getArrivalClass(r.arriveAirportDate, rows)}">
-                <span class="timeLabel">Airport arrival</span>${safe(r.recommendedAirportArrivalTime)}
-            </span>
+          <span class="timePill timeArr ${getArrivalClass(r.arriveAirportDate, rows)}">
+            <span class="timeLabel">Airport arrival</span>${safe(r.recommendedAirportArrivalTime)}
+          </span>
         </div>
         <span class="timePill timeDep">
-            <span class="timeLabel">Departure</span>${safe(r.scheduledDepartureTime)}
+          <span class="timeLabel">Departure</span>${safe(r.scheduledDepartureTime)}
         </span>
         <div class="row3">${safe(r.destinationCity)} (${safe(r.destinationAirport)})</div>
         <div class="row3">${safe(r.airline)}</div>
@@ -541,10 +548,12 @@
       </div>
     `).join("");
 
+                const isHot = b.count >= hotThreshold && b.count > 0;
+
                 return `
       <details class="bucket">
         <summary>
-          <span class="k">${b.label}</span>
+          <span class="k">${b.label} ${isHot ? "🔥" : ""}</span>
           <span class="bucketCount">${b.count}</span>
         </summary>
         <div class="bucketFlights">
@@ -564,6 +573,7 @@
                 });
             });
         }
+
 
 
 
