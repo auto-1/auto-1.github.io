@@ -316,6 +316,9 @@
     </div>
 
     <div class="controls">
+        <button id="departuresBtn">Departures</button>
+        <button id="arrivalsBtn">Arrivals</button>
+
         <button id="reloadBtn" title="Re-fetch arrivals.json">Reload JSON</button>
 
         <button id="toggleBtn" title="Toggle between all flights and long-haul only">
@@ -716,6 +719,24 @@
         }, 60 * 1000);
 
         loadFromUrl();
+
+        const isArrivals = location.pathname.endsWith("arrivals.html");
+
+        const departuresBtn = document.getElementById("departuresBtn");
+        const arrivalsBtn = document.getElementById("arrivalsBtn");
+
+        if (departuresBtn && arrivalsBtn) {
+            departuresBtn.classList.toggle("toggleOn", !isArrivals);
+            arrivalsBtn.classList.toggle("toggleOn", isArrivals);
+
+            departuresBtn.addEventListener("click", () => {
+                if (isArrivals) location.href = "./index.html";
+            });
+
+            arrivalsBtn.addEventListener("click", () => {
+                if (!isArrivals) location.href = "./arrivals.html";
+            });
+        }
     </script>
 
 </body>
