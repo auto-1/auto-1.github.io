@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Heathrow Arrivals</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            --gap: 12px;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            margin: 16px;
+            color: #111;
+        }
+
+        h2 {
+            margin: 0 0 6px 0;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 8px 0 12px;
+        }
+
+        button {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #f7f7f7;
+        }
+
+        .toggleOn {
+            border-color: #0a5;
+            box-shadow: 0 0 0 2px rgba(0, 170, 85, .12);
+        }
+
+        .pill {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            font-size: 13px;
+            background: #fafafa;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.25fr 1fr;
+            gap: var(--gap);
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #fff;
+        }
+
+        .card h3 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+        }
+
+        .card .sub {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .scroll {
+            max-height: 280px;
+            overflow: auto;
+            border-top: 1px solid #eee;
+            padding-top: 8px;
+        }
+
+        .line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 6px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 13px;
+        }
+
+        .line:last-child {
+            border-bottom: none;
+        }
+
+        .k {
+            color: #333;
+        }
+
+        .v {
+            font-weight: 800;
+        }
+
+        /* Desktop flight row layout */
+        .flightLine {
+            display: grid;
+            grid-template-columns: 120px 70px 70px 44px 1.2fr 1fr 120px;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 13px;
+            align-items: center;
+        }
+
+        .flightLine:last-child {
+            border-bottom: none;
+        }
+
+        /* Mobile flight row layout: stacked */
+        @media (max-width: 600px) {
+            body {
+                margin: 12px;
+            }
+
+            .flightLine {
+                display: block;
+                padding: 10px 0;
+            }
+
+            .flightLine>div {
+                margin: 6px 0;
+            }
+
+            .flightLine .row1 {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+
+            .flightLine .row2 {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                align-items: center;
+                color: #333;
+            }
+
+            .flightLine .row3 {
+                color: #666;
+            }
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .tag.long {
+            border-color: rgba(10, 170, 85, .35);
+            background: rgba(10, 170, 85, .08);
+        }
+
+        .tag.short {
+            border-color: rgba(0, 102, 204, .28);
+            background: rgba(0, 102, 204, .06);
+        }
+
+        .timeLabel {
+            font-size: 11px;
+            font-weight: 700;
+            opacity: 0.7;
+            margin-right: 4px;
+        }
+
+        .timePill {
+            font-weight: 800;
+            border-radius: 8px;
+            padding: 3px 8px;
+            display: inline-block;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .timeBook {
+            color: #6a00ff;
+            background: #f1eaff;
+        }
+
+        .timeDep {
+            color: #0a5;
+            background: #e9fff3;
+        }
+
+        .timeArr {
+            color: #06c;
+            background: #eaf2ff;
+        }
+
+        .timeArr.passed {
+            background: #ffe9e9;
+            color: #b00020;
+        }
+
+        .timeArr.soon {
+            background: #fff2cc;
+            color: #8a5a00;
+        }
+
+        .flightLine.faded {
+            opacity: 0.35;
+        }
+
+        /* Table wrapper for responsiveness */
+        .tableWrap {
+            margin-top: 14px;
+            overflow-x: auto;
+            border: 1px solid #eee;
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 980px;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            padding: 10px 8px;
+            vertical-align: top;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+
+        tr:hover {
+            background: #fafafa;
+        }
+
+        tr.faded {
+            opacity: 0.35;
+        }
+
+        .error {
+            color: #b00;
+            font-weight: 600;
+        }
+
+        .bucket {
+            border-bottom: 1px dashed #eee;
+            padding: 6px 0;
+        }
+
+        .bucket summary {
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 13px;
+            align-items: center;
+        }
+
+        .bucket summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .bucketCount {
+            font-weight: 800;
+        }
+
+        .bucketFlights {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Heathrow Arrivals</h2>
+    <div class="muted">
+        Auto-loads <b>arrivals.json</b> from this site. “Pickup window” estimates when passengers reach the arrivals
+        hall and request rides:
+        Domestic +15–30 mins · Short-haul +30–60 mins · Long-haul +45–90 mins (from landing).
+    </div>
+
+    <div class="controls">
+        <button id="reloadBtn" title="Re-fetch arrivals.json">Reload JSON</button>
+
+        <button id="toggleBtn" title="Toggle between all flights and long-haul only">
+            View: All flights
+        </button>
+
+        <span class="pill" id="loadedInfo">Loading…</span>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>Flights driving pickup demand (hourly)</h3>
+            <div class="sub">Each count represents the number of arriving flights whose passengers are likely to request
+                pickups during that hour.</div>
+            <div class="scroll" id="pickupBuckets"></div>
+        </div>
+
+        <div class="card">
+            <h3 id="thisHourTitle">Pickups likely this hour</h3>
+            <div class="sub">Flights likely to generate pickup requests this hour, ordered by earliest pickup time.
+            </div>
+            <div class="scroll" id="thisHourFlights"></div>
+        </div>
+    </div>
+
+    <div id="output"></div>
+
+    <script>
+        // ---------- state ----------
+        let allRows = [];
+        let longHaulOnly = false;
+        const LONG_HAUL_MINUTES = 240;
+
+        // 🔧 TEST MODE (optional): set e.g. "05:00" or leave null for real time
+        const TEST_TIME = null;
+
+        const JSON_URL = "./arrivals.json";
+
+        // ---------- time helpers ----------
+        const formatTime = (date) =>
+            date ? date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false }) : "";
+
+        const startOfHour = (date) => {
+            const d = new Date(date);
+            d.setMinutes(0, 0, 0);
+            return d;
+        };
+
+        const endOfHour = (date) => {
+            const d = startOfHour(date);
+            d.setHours(d.getHours() + 1);
+            return d;
+        };
+
+        const hourLabel = (start) => `${formatTime(start)}–${formatTime(endOfHour(start))}`;
+
+        const overlaps = (aStart, aEnd, bStart, bEnd) =>
+            aStart && aEnd && bStart && bEnd && aStart < bEnd && aEnd > bStart;
+
+        const safe = (v) => (v == null ? "" : String(v));
+
+        // Use dataset date + (real or TEST) time so "this hour" works even if flights are tomorrow
+        function getNowForDataset(rows) {
+            const realNow = new Date();
+            const base = rows?.find(r => r.landingDate)?.landingDate || realNow;
+            const now = new Date(base);
+
+            if (TEST_TIME) {
+                const [h, m] = TEST_TIME.split(":").map(Number);
+                now.setHours(h, m, 0, 0);
+            } else {
+                now.setHours(realNow.getHours(), realNow.getMinutes(), 0, 0);
+            }
+            return now;
+        }
+
+        // Colour code based on the "pickup window end" (i.e., latest likely emergence)
+        // You can swap to pickupWindowStart if you prefer earlier urgency.
+        function getPickupClass(pickupRefDate, rows) {
+            if (!pickupRefDate) return "";
+            const now = getNowForDataset(rows);
+            const diffMs = pickupRefDate - now;
+
+            if (diffMs < 0) return "passed";
+            if (diffMs <= 60 * 60 * 1000) return "soon";
+            return "";
+        }
+
+        // Fade once we're well past the window
+        function isFaded(pickupWindowEnd, rows) {
+            if (!pickupWindowEnd) return false;
+            const now = getNowForDataset(rows);
+            return now.getTime() > (pickupWindowEnd.getTime() + 15 * 60 * 1000);
+        }
+
+        // ---------- pickup ranges (Option A) ----------
+        function getPickupRangeMinutes(isDomestic, isLongHaul) {
+            if (isDomestic) return { min: 15, max: 30 };
+            if (isLongHaul) return { min: 45, max: 90 };
+            return { min: 30, max: 60 }; // short-haul international / European
+        }
+
+        // ---------- transform ----------
+        function transform(flights) {
+            return flights
+                .map(item => item?.flightService)
+                .filter(Boolean)
+                .filter(fs => fs.arrivalOrDeparture === "A")
+                .map(fs => {
+                    const movement = fs.aircraftMovement;
+                    const route = movement?.route;
+
+                    const origin = route?.portsOfCall?.find(p => p.portOfCallType === "ORIGIN");
+                    const destination = route?.portsOfCall?.find(p => p.portOfCallType === "DESTINATION"); // LHR
+
+                    const landingIso = destination?.operatingTimes?.scheduled?.local ?? null;
+                    const landingDate = landingIso ? new Date(landingIso) : null;
+
+                    const durationMin = movement?.scheduledFlightDurationMinutes ?? 0;
+
+                    const intlOrDom = route?.internationalOrDomestic ?? "";
+                    const isDomestic = intlOrDom === "D";
+                    const isLongHaul = !isDomestic && durationMin >= LONG_HAUL_MINUTES;
+
+                    const { min, max } = getPickupRangeMinutes(isDomestic, isLongHaul);
+
+                    const pickupWindowStart = landingDate
+                        ? new Date(landingDate.getTime() + min * 60 * 1000)
+                        : null;
+
+                    const pickupWindowEnd = landingDate
+                        ? new Date(landingDate.getTime() + max * 60 * 1000)
+                        : null;
+
+                    const terminal = destination?.airportFacility?.terminalFacility?.code ?? "";
+
+                    const status =
+                        movement?.aircraftMovementStatus?.find(s => s.name === "DestinationStatus")?.message ??
+                        movement?.aircraftMovementStatus?.[0]?.message ??
+                        "";
+
+                    return {
+                        flight: fs.iataFlightIdentifier ?? (fs.flightNumber ?? ""),
+                        airline: fs.airlineParty?.name ?? "",
+                        aircraftType: fs.aircraftTransport?.description ?? "",
+
+                        originAirport: origin?.airportFacility?.name ?? "",
+                        originCity: origin?.airportFacility?.airportCityLocation?.name ?? "",
+                        originIata: origin?.airportFacility?.iataIdentifier ?? "",
+
+                        terminal,
+                        durationMin,
+                        isLongHaul,
+                        isDomestic,
+                        status,
+
+                        landingIso,
+                        landingDate,
+                        pickupWindowStart,
+                        pickupWindowEnd,
+
+                        landingTime: formatTime(landingDate),
+                        pickupWindowLabel: (pickupWindowStart && pickupWindowEnd)
+                            ? `${formatTime(pickupWindowStart)}–${formatTime(pickupWindowEnd)}`
+                            : "",
+                        pickupStartTime: formatTime(pickupWindowStart),
+                        pickupEndTime: formatTime(pickupWindowEnd),
+                    };
+                });
+        }
+
+        // ---------- filtering ----------
+        function getVisibleRows() {
+            if (!longHaulOnly) return allRows;
+            return allRows.filter(r => r.isLongHaul);
+        }
+
+        // ---------- hourly buckets (overlap counts) ----------
+        function computeHourlyCounts(rows) {
+            const starts = rows.map(r => r.pickupWindowStart?.getTime()).filter(Boolean);
+            const ends = rows.map(r => r.pickupWindowEnd?.getTime()).filter(Boolean);
+            if (!starts.length || !ends.length) return [];
+
+            const minStart = startOfHour(new Date(Math.min(...starts)));
+            const maxEndHour = startOfHour(new Date(Math.max(...ends)));
+
+            const buckets = [];
+            for (let t = new Date(minStart); t <= maxEndHour; t.setHours(t.getHours() + 1)) {
+                const bStart = new Date(t);
+                const bEnd = endOfHour(bStart);
+                const label = hourLabel(bStart);
+
+                const count = rows.reduce((acc, r) => {
+                    return acc + (overlaps(r.pickupWindowStart, r.pickupWindowEnd, bStart, bEnd) ? 1 : 0);
+                }, 0);
+
+                buckets.push({ label, start: bStart, end: bEnd, count });
+            }
+            return buckets;
+        }
+
+        // Expandable hourly rows (mobile-friendly, uses your flightLine layout)
+        function renderBuckets(rows) {
+            const buckets = computeHourlyCounts(rows);
+            const el = document.getElementById("pickupBuckets");
+
+            if (!buckets.length) {
+                el.innerHTML = `<div class="muted">No pickup windows found.</div>`;
+                return;
+            }
+
+            el.innerHTML = buckets.map(b => {
+                const flightsInBucket = rows
+                    .filter(r => overlaps(r.pickupWindowStart, r.pickupWindowEnd, b.start, b.end))
+                    .sort((a, c) =>
+                        (a.pickupWindowStart?.getTime?.() ?? 0) - (c.pickupWindowStart?.getTime?.() ?? 0) ||
+                        (a.landingDate?.getTime?.() ?? 0) - (c.landingDate?.getTime?.() ?? 0)
+                    );
+
+                const flightsHtml = flightsInBucket.map(r => `
+        <div class="flightLine ${isFaded(r.pickupWindowEnd, rows) ? "faded" : ""}">
+          <div class="row1">
+            <span class="timePill timeBook">
+              <span class="timeLabel">Pickup window</span>${safe(r.pickupWindowLabel)}
+            </span>
+            <span class="tag ${r.isDomestic ? "short" : (r.isLongHaul ? "long" : "short")}">
+              ${r.isDomestic ? "DOM" : (r.isLongHaul ? "LH" : "SH")}
+            </span>
+          </div>
+          <div class="row2">
+            <span class="timePill timeArr ${getPickupClass(r.pickupWindowEnd, rows)}">
+              <span class="timeLabel">Latest pickup</span>${safe(r.pickupEndTime)}
+            </span>
+          </div>
+          <span class="timePill timeDep">
+            <span class="timeLabel">Landing</span>${safe(r.landingTime)}
+          </span>
+          <div class="row3">${safe(r.originCity)} (${safe(r.originAirport)})</div>
+          <div class="row3">${safe(r.airline)}</div>
+          <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
+        </div>
+      `).join("");
+
+                return `
+        <details class="bucket">
+          <summary>
+            <span class="k">${b.label}</span>
+            <span class="bucketCount">${b.count}</span>
+          </summary>
+          <div class="bucketFlights">
+            ${flightsInBucket.length ? flightsHtml : `<div class="muted">No flights in this hour.</div>`}
+          </div>
+        </details>
+      `;
+            }).join("");
+
+            // Accordion behaviour (only one open)
+            el.querySelectorAll("details.bucket").forEach(d => {
+                d.addEventListener("toggle", () => {
+                    if (!d.open) return;
+                    el.querySelectorAll("details.bucket").forEach(other => {
+                        if (other !== d) other.open = false;
+                    });
+                });
+            });
+        }
+
+        // ---------- this hour ----------
+        function renderThisHour(rows) {
+            const now = getNowForDataset(rows);
+            const bStart = startOfHour(now);
+            const label = hourLabel(bStart);
+            document.getElementById("thisHourTitle").textContent = `Pickups likely this hour (${label})`;
+
+            const inThisHour = rows
+                .filter(r => overlaps(r.pickupWindowStart, r.pickupWindowEnd, bStart, endOfHour(bStart)))
+                .sort((a, b) =>
+                    (a.pickupWindowStart?.getTime?.() ?? 0) - (b.pickupWindowStart?.getTime?.() ?? 0) ||
+                    (a.landingDate?.getTime?.() ?? 0) - (b.landingDate?.getTime?.() ?? 0)
+                );
+
+            const el = document.getElementById("thisHourFlights");
+            if (!inThisHour.length) {
+                el.innerHTML = `<div class="muted">No flights likely generating pickups in this hour.</div>`;
+                return;
+            }
+
+            el.innerHTML = inThisHour.map(r => `
+      <div class="flightLine ${isFaded(r.pickupWindowEnd, rows) ? "faded" : ""}">
+        <div class="row1">
+          <span class="timePill timeBook">
+            <span class="timeLabel">Pickup window</span>${safe(r.pickupWindowLabel)}
+          </span>
+          <span class="tag ${r.isDomestic ? "short" : (r.isLongHaul ? "long" : "short")}">
+            ${r.isDomestic ? "DOM" : (r.isLongHaul ? "LH" : "SH")}
+          </span>
+        </div>
+        <div class="row2">
+          <span class="timePill timeArr ${getPickupClass(r.pickupWindowEnd, rows)}">
+            <span class="timeLabel">Latest pickup</span>${safe(r.pickupEndTime)}
+          </span>
+        </div>
+        <span class="timePill timeDep">
+          <span class="timeLabel">Landing</span>${safe(r.landingTime)}
+        </span>
+        <div class="row3">${safe(r.originCity)} (${safe(r.originAirport)})</div>
+        <div class="row3">${safe(r.airline)}</div>
+        <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
+      </div>
+    `).join("");
+        }
+
+        // ---------- table ----------
+        function renderTable(rows) {
+            const sorted = [...rows].sort((a, b) => (a.landingIso || "").localeCompare(b.landingIso || ""));
+
+            document.getElementById("output").innerHTML = `
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Estimated pickup window</th>
+              <th>Landing</th>
+              <th>Terminal</th>
+              <th>From</th>
+              <th>Airline</th>
+              <th>Aircraft</th>
+              <th>Flight</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sorted.map(r => `
+              <tr class="${isFaded(r.pickupWindowEnd, rows) ? "faded" : ""}">
+                <td><span class="timePill timeBook">${safe(r.pickupWindowLabel)}</span></td>
+                <td><span class="timePill timeDep">${safe(r.landingTime)}</span></td>
+                <td>${safe(r.terminal)}</td>
+                <td>${safe(r.originCity)} (${safe(r.originAirport)})</td>
+                <td>${safe(r.airline)}</td>
+                <td>${safe(r.aircraftType)}</td>
+                <td>
+                  ${safe(r.flight)}
+                  ${r.isDomestic ? '<span class="tag short">Domestic</span>' : (r.isLongHaul ? '<span class="tag long">Long-haul</span>' : '<span class="tag short">Short-haul</span>')}
+                </td>
+                <td>${safe(r.status)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+        }
+
+        function renderAll() {
+            const rows = getVisibleRows();
+            renderBuckets(rows);
+            renderThisHour(rows);
+            renderTable(rows);
+
+            const btn = document.getElementById("toggleBtn");
+            btn.textContent = longHaulOnly ? `View: Long-haul (≥${LONG_HAUL_MINUTES}m)` : "View: All flights";
+            btn.classList.toggle("toggleOn", longHaulOnly);
+        }
+
+        // ---------- auto-load ----------
+        async function loadFromUrl() {
+            const info = document.getElementById("loadedInfo");
+            info.textContent = "Loading…";
+
+            try {
+                const res = await fetch(`${JSON_URL}?v=${Date.now()}`, { cache: "no-store" });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const flights = await res.json();
+
+                allRows = transform(flights);
+
+                const stamp = new Date().toLocaleString("en-GB", { hour12: false });
+                info.textContent = `Loaded: ${allRows.length} flights @ ${stamp}`;
+                renderAll();
+            } catch (e) {
+                info.textContent = "Load failed";
+                document.getElementById("output").innerHTML =
+                    `<p class="error">Error loading ${JSON_URL}: ${e.message}</p>`;
+            }
+        }
+
+        document.getElementById("reloadBtn").addEventListener("click", loadFromUrl);
+
+        document.getElementById("toggleBtn").addEventListener("click", () => {
+            if (!allRows.length) return;
+            longHaulOnly = !longHaulOnly;
+            renderAll();
+        });
+
+        setInterval(() => {
+            if (!allRows.length) return;
+            renderThisHour(getVisibleRows());
+        }, 60 * 1000);
+
+        loadFromUrl();
+    </script>
+
+</body>
+
+</html>
