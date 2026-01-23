@@ -277,6 +277,7 @@
             justify-content: space-between;
             gap: 12px;
             font-size: 13px;
+            align-items: center;
         }
 
         .bucket summary::-webkit-details-marker {
@@ -291,19 +292,6 @@
             margin-top: 8px;
             padding-top: 8px;
             border-top: 1px solid #eee;
-        }
-
-        .bucketFlightRow {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 6px 0;
-            border-bottom: 1px dashed #f0f0f0;
-            font-size: 13px;
-        }
-
-        .bucketFlightRow:last-child {
-            border-bottom: none;
         }
     </style>
 </head>
@@ -512,24 +500,26 @@
             el.innerHTML = buckets.map(b => {
                 const flightsInBucket = rows
                     .filter(r => overlaps(r.bookingWindowStart, r.bookingWindowEnd, b.start, b.end))
-                    // ordered by airport-arrival target (then departure)
                     .sort((a, c) =>
                         (a.arriveAirportDate?.getTime?.() ?? 0) - (c.arriveAirportDate?.getTime?.() ?? 0) ||
                         (a.depDate?.getTime?.() ?? 0) - (c.depDate?.getTime?.() ?? 0)
                     );
 
                 const flightsHtml = flightsInBucket.map(r => `
-      <div class="bucketFlightRow">
-        <div>
+      <div class="flightLine ${isFaded(r.arriveAirportDate, rows) ? "faded" : ""}">
+        <div class="row1">
           <span class="timePill timeBook">${safe(r.bookingWindowLabel)}</span>
           <span class="tag ${r.isLongHaul ? "long" : "short"}">${r.isLongHaul ? "LH" : "SH"}</span>
-          ${safe(r.destinationCity)} (${safe(r.destinationAirport)})
         </div>
-        <div>
-          <span class="timePill timeArr">${safe(r.recommendedAirportArrivalTime)}</span>
-          <span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span>
-          T${safe(r.terminal)} · ${safe(r.flight)}
+        <div class="row2">
+          <span class="timePill timeArr ${getArrivalClass(r.arriveAirportDate, rows)}">
+            ${safe(r.recommendedAirportArrivalTime)}
+          </span>
         </div>
+        <div class="row2"><span class="timePill timeDep">${safe(r.scheduledDepartureTime)}</span></div>
+        <div class="row3">${safe(r.destinationCity)} (${safe(r.destinationAirport)})</div>
+        <div class="row3">${safe(r.airline)}</div>
+        <div class="row3">T${safe(r.terminal)} · ${safe(r.flight)}</div>
       </div>
     `).join("");
 
@@ -545,7 +535,18 @@
       </details>
     `;
             }).join("");
+
+            // Optional accordion behaviour (only one open at a time)
+            el.querySelectorAll("details.bucket").forEach(d => {
+                d.addEventListener("toggle", () => {
+                    if (!d.open) return;
+                    el.querySelectorAll("details.bucket").forEach(other => {
+                        if (other !== d) other.open = false;
+                    });
+                });
+            });
         }
+
 
 
         // ---------- this hour slot ----------
